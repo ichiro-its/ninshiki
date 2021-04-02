@@ -22,7 +22,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'detector = ninshiki.detector:main'
+            
+            'viewer = ninshiki.viewer:main'
         ],
     },
 )
