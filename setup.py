@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'detector = ninshiki.detector:main'
+            'viewer = ninshiki.viewer:main'
         ],
     },
 )
