@@ -30,9 +30,9 @@ from object_detection.utils import ops as utils_ops
 
 
 class Viewer (Node):
-    def __init__(self, node_name, topic_name):
+    def __init__(self, node_name, topic_name, directory):
         super().__init__(node_name)
-        self.detection_model = tf.saved_model.load("ninshiki/ninshiki/saved_model")
+        self.detection_model = tf.saved_model.load(directory)
 
         self.raw_image_subscription = self.create_subscription(
             RawImage,
@@ -115,16 +115,19 @@ class Viewer (Node):
 
 
 def main(args=None):
-    if (len(sys.argv) < 2):
-        print("Usage: ros2 run shisen viewer <topic_name>")
-    topic_name = sys.argv[1]
-    rclpy.init(args=args)
-    viewer = Viewer("viewer", topic_name)
+    try:
+        topic_name = sys.argv[1]
+        directory_saved_model = sys.argv[2]
 
-    rclpy.spin(viewer)
+        rclpy.init(args=args)
+        viewer = Viewer("viewer", topic_name, directory_saved_model)
 
-    viewer.destroy_node()
-    rclpy.shutdown()
+        rclpy.spin(viewer)
+
+        viewer.destroy_node()
+        rclpy.shutdown()
+    except (IndexError):
+        print("Usage: ros2 run ninshiki viewer <topic_name> <directory of saved_model.bp>")
 
 
 if __name__ == '__main__':
