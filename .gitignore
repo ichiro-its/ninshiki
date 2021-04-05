@@ -8,3 +8,5 @@ install
 
 __pycache__
 *.pyc
+
+*.pb

@@ -30,17 +30,21 @@ import sys
 class Viewer (Node):
     def __init__(self, node_name, topic_name):
         super().__init__(node_name)
+
         self.raw_image_subscription = self.create_subscription(
             RawImage,
             topic_name,
             self.listener_callback_raw,
             10)
+
         self.get_logger().info("subscribe raw image on " + self.raw_image_subscription.topic_name)
+
         self.compressed_image_subscription = self.create_subscription(
             CompressedImage,
             topic_name,
             self.listener_callback_compressed,
             10)
+
         self.get_logger().info(
             "subscribe compressed image on "
             + self.compressed_image_subscription.topic_name)
@@ -71,16 +75,18 @@ class Viewer (Node):
 
 
 def main(args=None):
-    if (len(sys.argv) < 2):
-        print("Usage: ros2 run shisen viewer <topic_name>")
-    topic_name = sys.argv[1]
-    rclpy.init(args=args)
-    viewer = Viewer("viewer", topic_name)
+    try:
+        topic_name = sys.argv[1]
 
-    rclpy.spin(viewer)
+        rclpy.init(args=args)
+        viewer = Viewer("viewer", topic_name)
 
-    viewer.destroy_node()
-    rclpy.shutdown()
+        rclpy.spin(viewer)
+
+        viewer.destroy_node()
+        rclpy.shutdown()
+    except (IndexError):
+        print("Usage: ros2 run ninshiki viewer <topic_name>")
 
 
 if __name__ == '__main__':
