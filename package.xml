@@ -7,6 +7,7 @@
   <maintainer email="alfi.maulana.f@gmail.com">Alfi Maulana</maintainer>
   <license>MIT License</license>
   <exec_depend>shisen_interface</exec_depend>
+  <exec_depend>ninshiki_interface</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

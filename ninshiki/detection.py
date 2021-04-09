@@ -19,7 +19,7 @@
 # THE SOFTWARE.
 
 
-class Object():
+class Detection():
     def __init__(self, label, score, left, right, top, bottom):
         self.label = label
         self.score = score

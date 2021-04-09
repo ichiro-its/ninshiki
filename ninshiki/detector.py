@@ -27,7 +27,9 @@ from shisen_interfaces.msg import RawImage
 import sys
 import tensorflow as tf
 from object_detection.utils import ops as utils_ops
-from .object import Object
+from .detection import Detection
+from ninshiki_interfaces.msg import DetectedObject
+from ninshiki_interfaces.msg import DetectedObjects
 
 
 class Detector (Node):
@@ -52,6 +54,12 @@ class Detector (Node):
             "subscribe compressed image on "
             + self.compressed_image_subscription.topic_name)
 
+        self.detected_object_publisher = self.create_publisher(
+            DetectedObjects, node_name + "/detections", 10)
+        self.get_logger().info(
+            "publish detected images on "
+            + self.detected_object_publisher.topic_name)
+
     def listener_callback_raw(self, message):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
@@ -60,6 +68,7 @@ class Detector (Node):
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
             print(output_dict)
+            self.publishers_detection(output_dict)
 
             cv2.imshow(self.raw_image_subscription.topic_name, received_frame)
             cv2.waitKey(1)
@@ -76,6 +85,7 @@ class Detector (Node):
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
             print(output_dict)
+            self.publishers_detection(output_dict)
 
             cv2.imshow(self.compressed_image_subscription.topic_name, received_frame)
             cv2.waitKey(1)
@@ -83,6 +93,21 @@ class Detector (Node):
 
         else:
             self.get_logger().warn("once, received empty compressed image")
+
+    def publishers_detection(self, output_dict):
+        messages = DetectedObjects()
+        # print(len(output_dict))
+        for i in range(len(output_dict)):
+            message = DetectedObject()
+            message.label = output_dict[i].label
+            message.score = output_dict[i].score
+            message.left = output_dict[i].left
+            message.right = output_dict[i].right
+            message.top = output_dict[i].top
+            message.bottom = output_dict[i].bottom
+            messages.detected_objects.append(message)
+
+        self.detected_object_publisher.publish(messages)
 
     def run_inference_for_single_image(self, model, image):
         image = np.asarray(image)
@@ -115,13 +140,16 @@ class Detector (Node):
                 image.shape[0], image.shape[1])
             detection_masks_reframed = tf.cast(detection_masks_reframed > 0.5, tf.uint8)
             output_dict['detection_masks_reframed'] = detection_masks_reframed.numpy()
-
+        # print(output_dict)
         object_list = list()
         for i in range(output_dict['num_detections']):
-            detect_object = Object(
-                output_dict['detection_classes'], output_dict['detection_scores'],
-                output_dict['detection_boxes'][0][0], output_dict['detection_boxes'][0][1],
-                output_dict['detection_boxes'][0][2], output_dict['detection_boxes'][0][3])
+            detect_object = Detection(
+                output_dict['detection_classes'][i].tolist(),
+                output_dict['detection_scores'][i].tolist(),
+                output_dict['detection_boxes'][i][0].tolist(),
+                output_dict['detection_boxes'][i][1].tolist(),
+                output_dict['detection_boxes'][i][2].tolist(),
+                output_dict['detection_boxes'][i][3].tolist())
             object_list.append(detect_object)
 
         return object_list
