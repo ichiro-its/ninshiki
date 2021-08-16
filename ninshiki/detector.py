@@ -22,8 +22,8 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from shisen_interfaces.msg import CompressedImage
-from shisen_interfaces.msg import RawImage
+from shisen_interfaces.msg import Image
+# from shisen_interfaces.msg import RawImage
 import sys
 import tensorflow as tf
 from object_detection.utils import ops as utils_ops
@@ -38,21 +38,13 @@ class Detector (Node):
 
         self.detection_model = tf.saved_model.load(model_path)
 
-        self.raw_image_subscription = self.create_subscription(
-            RawImage,
+        self.image_subscription = self.create_subscription(
+            Image,
             topic_name,
-            self.listener_callback_raw,
+            self.listener_callback,
             10)
-        self.get_logger().info("subscribe raw image on " + self.raw_image_subscription.topic_name)
-
-        self.compressed_image_subscription = self.create_subscription(
-            CompressedImage,
-            topic_name,
-            self.listener_callback_compressed,
-            10)
-        self.get_logger().info(
-            "subscribe compressed image on "
-            + self.compressed_image_subscription.topic_name)
+        self.get_logger().info("subscribe image on "
+            + self.image_subscription.topic_name)
 
         self.detected_object_publisher = self.create_publisher(
             DetectedObjects, node_name + "/detections", 10)
@@ -63,8 +55,15 @@ class Detector (Node):
     def listener_callback_raw(self, message):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
-        received_frame = received_frame.reshape(message.rows, message.cols, 3)
-
+        # Raw Image
+        if (message.quality < 0):
+            received_frame = received_frame.reshape(message.rows, message.cols, 3)
+            print("Raw Image")
+        # Compressed Image
+        else:
+            received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
+            print("Compressed Image")
+        
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
             print(output_dict)
