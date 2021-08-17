@@ -23,7 +23,6 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from shisen_interfaces.msg import Image
-# from shisen_interfaces.msg import RawImage
 import sys
 import tensorflow as tf
 from object_detection.utils import ops as utils_ops
@@ -43,8 +42,7 @@ class Detector (Node):
             topic_name,
             self.listener_callback,
             10)
-        self.get_logger().info("subscribe image on "
-            + self.image_subscription.topic_name)
+        self.get_logger().info("subscribe image on " + self.image_subscription.topic_name)
 
         self.detected_object_publisher = self.create_publisher(
             DetectedObjects, node_name + "/detections", 10)
@@ -52,7 +50,7 @@ class Detector (Node):
             "publish detected images on "
             + self.detected_object_publisher.topic_name)
 
-    def listener_callback_raw(self, message):
+    def listener_callback(self, message):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
         # Raw Image
@@ -63,35 +61,18 @@ class Detector (Node):
         else:
             received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
             print("Compressed Image")
-        
-        if (received_frame.size != 0):
-            output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
-            print(output_dict)
-            self.publishers_detection(output_dict)
-
-            cv2.imshow(self.raw_image_subscription.topic_name, received_frame)
-            cv2.waitKey(1)
-            self.get_logger().debug("once, received raw image and display it")
-
-        else:
-            self.get_logger().warn("once, received empty raw image")
-
-    def listener_callback_compressed(self, message):
-        received_frame = np.array(message.data)
-        received_frame = np.frombuffer(received_frame, dtype=np.uint8)
-        received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
 
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
             print(output_dict)
             self.publishers_detection(output_dict)
 
-            cv2.imshow(self.compressed_image_subscription.topic_name, received_frame)
+            cv2.imshow(self.image_subscription.topic_name, received_frame)
             cv2.waitKey(1)
-            self.get_logger().debug("once, received compressed image and display it")
+            self.get_logger().debug("once, received image and display it")
 
         else:
-            self.get_logger().warn("once, received empty compressed image")
+            self.get_logger().warn("once, received empty image")
 
     def publishers_detection(self, output_dict):
         messages = DetectedObjects()

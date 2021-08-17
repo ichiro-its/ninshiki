@@ -37,7 +37,7 @@ class Viewer (Node):
             10)
 
         self.get_logger().info("subscribe image on " + self.image_subscription.topic_name)
-    
+
     def listener_callback(self, message):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
@@ -50,7 +50,7 @@ class Viewer (Node):
         else:
             received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
             print("Compressed Image")
-        
+
         if (received_frame.size != 0):
             cv2.imshow(self.image_subscription.topic_name, received_frame)
             cv2.waitKey(1)
