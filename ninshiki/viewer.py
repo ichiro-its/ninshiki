@@ -21,13 +21,14 @@
 import cv2
 import numpy as np
 import rclpy
+from rclpy.node import MsgType
 from rclpy.node import Node
 from shisen_interfaces.msg import Image
 import sys
 
 
 class Viewer (Node):
-    def __init__(self, node_name, topic_name):
+    def __init__(self, node_name: str, topic_name: str):
         super().__init__(node_name)
 
         self.image_subscription = self.create_subscription(
@@ -38,7 +39,7 @@ class Viewer (Node):
 
         self.get_logger().info("subscribe image on " + self.image_subscription.topic_name)
 
-    def listener_callback(self, message):
+    def listener_callback(self, message: MsgType):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
 
