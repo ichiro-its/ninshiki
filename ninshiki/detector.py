@@ -21,21 +21,20 @@
 import cv2
 import numpy as np
 import rclpy
-from rclpy.node import MsgType
 from rclpy.node import Node
 from shisen_interfaces.msg import Image
 import sys
 import tensorflow as tf
-from types import ModuleType
 from object_detection.utils import ops as utils_ops
 from .detection import Detection
-from ninshiki_interfaces.msg import DetectedObject
-from ninshiki_interfaces.msg import DetectedObjects
+from ninshiki_interfaces.msg import DetectedObject, DetectedObjects
 
 
 class Detector (Node):
-    def __init__(self, node_name: str, topic_name: str, model_path: str):
+    def __init__(self, node_name, topic_name, model_path):
         super().__init__(node_name)
+        self.rows = 0
+        self.cols = 0
 
         self.detection_model = tf.saved_model.load(model_path)
 
@@ -52,21 +51,21 @@ class Detector (Node):
             "publish detected images on "
             + self.detected_object_publisher.topic_name)
 
-    def listener_callback(self, message: MsgType):
+    def listener_callback(self, message):
+        self.rows = message.rows
+        self.cols = message.cols
+
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
         # Raw Image
         if (message.quality < 0):
             received_frame = received_frame.reshape(message.rows, message.cols, 3)
-            print("Raw Image")
         # Compressed Image
         else:
             received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
-            print("Compressed Image")
 
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
-            print(output_dict)
             self.publishers_detection(output_dict)
 
             cv2.imshow(self.image_subscription.topic_name, received_frame)
@@ -76,24 +75,23 @@ class Detector (Node):
         else:
             self.get_logger().warn("once, received empty image")
 
-    def publishers_detection(self, output_dict: list):
+    def publishers_detection(self, output_dict):
         messages = DetectedObjects()
-        # print(len(output_dict))
         for i in range(len(output_dict)):
             message = DetectedObject()
-            message.label = output_dict[i].label
+            message.label = str(output_dict[i].label)
             message.score = output_dict[i].score
-            message.left = output_dict[i].left
-            message.right = output_dict[i].right
-            message.top = output_dict[i].top
-            message.bottom = output_dict[i].bottom
+            message.left = int(output_dict[i].left * self.cols)
+            message.right = int(output_dict[i].right * self.cols)
+            message.top = int(output_dict[i].top * self.rows)
+            message.bottom = int(output_dict[i].bottom * self.rows)
             messages.detected_objects.append(message)
 
         self.detected_object_publisher.publish(messages)
 
-    def run_inference_for_single_image(self, model: ModuleType, image: np.array) -> list:
+    def run_inference_for_single_image(self, model, image):
         image = np.asarray(image)
-        # The input needs to be a tensor, convert it using `tf.convert_to_tensor`.
+        # conver input needs to be a tensor
         input_tensor = tf.convert_to_tensor(image)
         # The model expects a batch of images, so add an axis with `tf.newaxis`.
         input_tensor = input_tensor[tf.newaxis, ...]
