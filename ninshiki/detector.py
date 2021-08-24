@@ -81,10 +81,10 @@ class Detector (Node):
             message = DetectedObject()
             message.label = str(output_dict[i].label)
             message.score = output_dict[i].score
-            message.left = int(output_dict[i].left * self.cols)
-            message.right = int(output_dict[i].right * self.cols)
-            message.top = int(output_dict[i].top * self.rows)
-            message.bottom = int(output_dict[i].bottom * self.rows)
+            message.left = output_dict[i].left
+            message.right = output_dict[i].right
+            message.top = output_dict[i].top
+            message.bottom = output_dict[i].bottom
             messages.detected_objects.append(message)
 
         self.detected_object_publisher.publish(messages)
