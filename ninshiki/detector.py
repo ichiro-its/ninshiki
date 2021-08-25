@@ -35,8 +35,6 @@ from ninshiki_interfaces.msg import DetectedObject, DetectedObjects
 class Detector (Node):
     def __init__(self, node_name: str, topic_name: str, model_path: str):
         super().__init__(node_name)
-        self.rows = 0
-        self.cols = 0
 
         self.detection_model = tf.saved_model.load(model_path)
 
