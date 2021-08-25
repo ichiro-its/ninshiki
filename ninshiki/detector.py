@@ -21,17 +21,19 @@
 import cv2
 import numpy as np
 import rclpy
+from rclpy.node import MsgType
 from rclpy.node import Node
 from shisen_interfaces.msg import Image
 import sys
 import tensorflow as tf
+from types import ModuleType
 from object_detection.utils import ops as utils_ops
 from .detection import Detection
 from ninshiki_interfaces.msg import DetectedObject, DetectedObjects
 
 
 class Detector (Node):
-    def __init__(self, node_name, topic_name, model_path):
+    def __init__(self, node_name: str, topic_name: str, model_path: str):
         super().__init__(node_name)
         self.rows = 0
         self.cols = 0
@@ -51,10 +53,7 @@ class Detector (Node):
             "publish detected images on "
             + self.detected_object_publisher.topic_name)
 
-    def listener_callback(self, message):
-        self.rows = message.rows
-        self.cols = message.cols
-
+    def listener_callback(self, message: MsgType):
         received_frame = np.array(message.data)
         received_frame = np.frombuffer(received_frame, dtype=np.uint8)
         # Raw Image
@@ -75,7 +74,7 @@ class Detector (Node):
         else:
             self.get_logger().warn("once, received empty image")
 
-    def publishers_detection(self, output_dict):
+    def publishers_detection(self, output_dict: list):
         messages = DetectedObjects()
         for i in range(len(output_dict)):
             message = DetectedObject()
@@ -89,7 +88,7 @@ class Detector (Node):
 
         self.detected_object_publisher.publish(messages)
 
-    def run_inference_for_single_image(self, model, image):
+    def run_inference_for_single_image(self, model: ModuleType, image: np.array) -> list:
         image = np.asarray(image)
         # conver input needs to be a tensor
         input_tensor = tf.convert_to_tensor(image)
