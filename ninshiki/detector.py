@@ -29,8 +29,7 @@ import tensorflow as tf
 from types import ModuleType
 from object_detection.utils import ops as utils_ops
 from .detection import Detection
-from ninshiki_interfaces.msg import DetectedObject
-from ninshiki_interfaces.msg import DetectedObjects
+from ninshiki_interfaces.msg import DetectedObject, DetectedObjects
 
 
 class Detector (Node):
@@ -58,15 +57,12 @@ class Detector (Node):
         # Raw Image
         if (message.quality < 0):
             received_frame = received_frame.reshape(message.rows, message.cols, 3)
-            print("Raw Image")
         # Compressed Image
         else:
             received_frame = cv2.imdecode(received_frame, cv2.IMREAD_UNCHANGED)
-            print("Compressed Image")
 
         if (received_frame.size != 0):
             output_dict = self.run_inference_for_single_image(self.detection_model, received_frame)
-            print(output_dict)
             self.publishers_detection(output_dict)
 
             cv2.imshow(self.image_subscription.topic_name, received_frame)
@@ -78,10 +74,9 @@ class Detector (Node):
 
     def publishers_detection(self, output_dict: list):
         messages = DetectedObjects()
-        # print(len(output_dict))
         for i in range(len(output_dict)):
             message = DetectedObject()
-            message.label = output_dict[i].label
+            message.label = str(output_dict[i].label)
             message.score = output_dict[i].score
             message.left = output_dict[i].left
             message.right = output_dict[i].right
@@ -93,7 +88,7 @@ class Detector (Node):
 
     def run_inference_for_single_image(self, model: ModuleType, image: np.array) -> list:
         image = np.asarray(image)
-        # The input needs to be a tensor, convert it using `tf.convert_to_tensor`.
+        # conver input needs to be a tensor
         input_tensor = tf.convert_to_tensor(image)
         # The model expects a batch of images, so add an axis with `tf.newaxis`.
         input_tensor = input_tensor[tf.newaxis, ...]
